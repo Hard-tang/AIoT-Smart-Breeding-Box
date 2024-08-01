@@ -31,6 +31,7 @@ void driver_init(){
     Serial1.setTX(0);
     Serial1.begin(115200);   // 初始化串口通讯
     Serial.begin(115200);   // 初始化串口通讯
+    stepper_calibration();
 }
 
 
@@ -70,12 +71,12 @@ void stepper_calibration(){
         if(!x_stop){  //如果读取到限位开关未被按下，则继续向限位开关移动
             stepperX.move(-2000);
             stepperX.run();
-            Serial.println("X move");
+            //Serial.println("X move");
         }
         if(!y_stop){  
             stepperY.move(-2000);
             stepperY.run();
-            Serial.println("Y move");
+            //Serial.println("Y move");
         }
         else if (flag == 1)
         {
@@ -85,7 +86,7 @@ void stepper_calibration(){
         if(!z_stop && flag == 2 ){  
             stepperZ.move(-2000);
             stepperZ.run();
-            Serial.println("Z move");
+            //Serial.println("Z move");
         }
     }
 }

@@ -2,6 +2,7 @@
 #include <AccelStepper.h> 
 #include "gimbal_control.h"
 #include <Servo.h>
+#include "Motor-Control.h"
 
 
 
@@ -19,9 +20,9 @@ const int y_stopPin = 9;   // y方向光电门限位引脚
 const int z_stopPin = 10;  // z方向光电门限位引脚
 const int crawlPin = 14;      // 机械臂引脚
 const int dripPin = 15;       //水泵引脚
-const int x_max = 13950;   // x方向最大步进数
-const int y_max = 28500;   // y方向最大步进数
-const int z_max = 28500;   // z方向最大步进数
+const int x_max = 10400;   // x方向最大步进数
+const int y_max = 15000;   // y方向最大步进数
+const int z_max = 12000;   // z方向最大步进数
 
 
 AccelStepper stepperX(1,xstepPin,xdirPin);//建立步进电机对象X
@@ -41,9 +42,9 @@ int y_steps = 0;
 int z_steps = 0;
 
 // 运动速度
-float x_vel = 100000;
-float y_vel = 100000;
-float z_vel = 100000;
+float x_vel = 2000;
+float y_vel = 2000;
+float z_vel = 2000;
 
 // 运动加速度
 float x_acc = 20000;
@@ -86,10 +87,11 @@ void Serial1_analysis()
     delay(1);      // 延时函数用于等待字符完全进入缓冲区
     if(length == 8) break;
   }
+  if(length == 0) return;
   if(length == 8){
     if(cash[0] == 0xFF && cash[7] == 0xFE){
-        water_status = cash[1]; //  滴灌状态
-        crawl_status = cash[2];  //  抓取状态
+        water_status = cash[2]; //  滴灌状态
+        crawl_status = cash[1];  //  抓取状态
         Normal_Crawl[0] = cash[3]; //  常态化第一盆是否执行对应命令
         Normal_Crawl[1] = cash[4]; //  常态模式第二盆是否执行对应命令
         Defridence[0] = cash[5];    //差异化第一盆是否执行对应命令
