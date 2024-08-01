@@ -19,6 +19,8 @@ extern const int zstepPin;    // z步进控制引脚
 extern const int x_stopPin;   // x方向光电门限位引脚
 extern const int y_stopPin;   // y方向光电门限位引脚
 extern const int z_stopPin;   // z方向光电门限位引脚
+extern const int crawlPin;  // 机械臂引脚
+extern const int dripPin;   //水泵引脚
 extern const int x_max;       // x方向最大步进数
 extern const int y_max;       // y方向最大步进数
 extern const int z_max;       // z方向最大步进数
@@ -57,7 +59,7 @@ void stepper_stop();
 void stepper_calibration();
 void stepper_run();
 void stepper_move(int x,int y,int z);
-
+int Motor_Water(int staus);
 
 
 

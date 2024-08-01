@@ -1,6 +1,9 @@
 #include<Arduino.h>
 #include <AccelStepper.h> 
 #include "gimbal_control.h"
+#include <Servo.h>
+
+
 
 /* GPIO配置 */
 const int enablePin = 11;  // 使能控制引脚
@@ -14,13 +17,17 @@ const int zstepPin = 7;    // z步进控制引脚
 const int x_stopPin = 8;   // x方向光电门限位引脚
 const int y_stopPin = 9;   // y方向光电门限位引脚
 const int z_stopPin = 10;  // z方向光电门限位引脚
+const int crawlPin = 14;      // 机械臂引脚
+const int dripPin = 15;       //水泵引脚
 const int x_max = 13950;   // x方向最大步进数
-const int y_max = 15250;   // y方向最大步进数
-const int z_max = 11000;   // z方向最大步进数
+const int y_max = 28500;   // y方向最大步进数
+const int z_max = 28500;   // z方向最大步进数
+
 
 AccelStepper stepperX(1,xstepPin,xdirPin);//建立步进电机对象X
 AccelStepper stepperY(1,ystepPin,ydirPin);//建立步进电机对象Y
 AccelStepper stepperZ(1,zstepPin,zdirPin);//建立步进电机对象Z
+Servo myservo;                            // 建立舵机对象myservo
 
 /* 定义全局变量 */
 // 信号停止状态标志
@@ -43,16 +50,57 @@ float x_acc = 20000;
 float y_acc = 20000;
 float z_acc = 20000;
 
+// 滴灌命令
+uint16_t water_status = 0;
+
+//抓取命令
+uint16_t crawl_status = 0;
+
+//坐标指令标志
+uint16_t Normal_Crawl[2] = {0};
+uint16_t Defridence[2] = {0};
 
 
 void setup() {
   driver_init();
+  /* 声明一般函数 */
+  myservo.attach(crawlPin); // 舵机对象myservo连接Arduino9号引脚
 
 }
 
 void loop() {
+  Serial1_analysis();
   Serial_app();
   stepper_run();
+crawl_drip_control();
+
+}
+
+// 串口1解析器
+void Serial1_analysis()
+{
+  char cash[50]={0}; //串口接收命令存放区
+  uint16_t length = 0;
+  while(Serial1.available()>0){ //检查缓冲区是否存在数据
+    cash[length++] += char(Serial1.read()); //读取缓冲区
+    delay(1);      // 延时函数用于等待字符完全进入缓冲区
+    if(length == 8) break;
+  }
+  if(length == 8){
+    if(cash[0] == 0xFF && cash[7] == 0xFE){
+        water_status = cash[1]; //  滴灌状态
+        crawl_status = cash[2];  //  抓取状态
+        Normal_Crawl[0] = cash[3]; //  常态化第一盆是否执行对应命令
+        Normal_Crawl[1] = cash[4]; //  常态模式第二盆是否执行对应命令
+        Defridence[0] = cash[5];    //差异化第一盆是否执行对应命令
+        Defridence[1] = cash[6];    //  差异化第二盆是否执行对应命令
+        
+    }
+  }
+  else
+  {
+      Serial.println("串口接收命令错误");
+  }
 }
 
 
@@ -243,5 +291,10 @@ void Serial_app(){//上位机交互程序
     }
   }
 }
+
+
+
+
+
 
 

@@ -12,11 +12,12 @@ void driver_init(){
     pinMode(zdirPin,OUTPUT);     
     pinMode(x_stopPin,INPUT_PULLUP);     
     pinMode(y_stopPin,INPUT_PULLUP);     
-    pinMode(z_stopPin,INPUT_PULLUP);     
+    pinMode(z_stopPin,INPUT_PULLUP); 
+    pinMode(crawlPin,OUTPUT);
+    pinMode(dripPin, OUTPUT);    
 
     pinMode(enablePin,OUTPUT);   // 使能引脚为输出模式
-    digitalWrite(enablePin,HIGH); // 将使能控制引脚设置为高电平从而让
-                               // 电机驱动板进入工作状态
+    digitalWrite(enablePin,HIGH); // 将使能控制引脚设置为高电平从而让电机驱动板进入工作状态             
 
   // 写入运动速度加速度参数
     stepperX.setMaxSpeed(x_vel);     
@@ -24,8 +25,11 @@ void driver_init(){
     stepperY.setMaxSpeed(y_vel);     
     stepperY.setAcceleration(y_acc);  
     stepperZ.setMaxSpeed(z_vel);     
-    stepperZ.setAcceleration(z_acc);  
+    stepperZ.setAcceleration(z_acc); 
 
+    Serial1.setRX(1);
+    Serial1.setTX(0);
+    Serial1.begin(115200);   // 初始化串口通讯
     Serial.begin(115200);   // 初始化串口通讯
 }
 
@@ -75,6 +79,7 @@ void stepper_calibration(){
         }
         else if (flag == 1)
         {
+
             flag = 2;
         }
         if(!z_stop && flag == 2 ){  
@@ -158,4 +163,19 @@ void stepper_move(int x,int y,int z){
   stepperX.moveTo(x);
   stepperY.moveTo(y);
   stepperZ.moveTo(z);
+}
+
+/********************水泵*******************/
+int Motor_Water(int staus)
+{
+	if (staus == 0x01)						
+	{
+		digitalWrite(dripPin, HIGH);	
+		return 0x01;
+	}
+	else									
+	{
+		digitalWrite(dripPin, LOW);	
+		return 0x00;
+	}
 }
