@@ -193,59 +193,72 @@ void crawl_drip_control()
 /*************************************************************************************************** */
     if(water_status && !crawl_status)
     {
-        Serial.print("开始滴灌");
+        water_status = 0x00;
+        Serial.println("开始滴灌");
         Motor_Status[2] = 0x01;
         Serial1.write(Motor_Status, 4);
         stepperZ.runToNewPosition(crawl_First_hight[1]);                //z轴上升到安全运动高度
         Serial.println("z轴上升到安全运动高度");
-         int lastY = 0;
-         int lastX = 0;
+         int lastY = -1000;
+         int lastX = -1000;
 
         /******************常态化第一层滴灌************************* */
         for(int i = 0; i < 3; i++)                                      //遍历y轴，每次走固定坐标
         {
+            lastY += y_last;
             stepperY.runToNewPosition(First_normal[1] + lastY);          //基于上一盆坐标y轴移动到下一盆y值
-            lastY += y_last;                                               //预设值，调整更改，y值之间的距离
-            Serial.printf("x = %d\n", i);
+                                               //预设值，调整更改，y值之间的距离
+            Serial.printf("i = %d\n", i);
             nomal_status ++;            
             for(int j = 0;j < 4;j++)                                    //遍历x轴，每次走固定坐标
             {
-              Serial.printf("j = %d\n", j);
-                stepperX.runToNewPosition(First_normal[0] + lastX );    //基于上一盆坐标x轴移动到下一盆x值
-               Serial.printf("基于上一盆坐标x轴移动到下一盆x值%d\n",(First_normal[0] + lastX));
-               Serial.printf("lastX=%d\n",lastX);
-                if(first_crawl_flag[0] == 0x00 || first_crawl_flag[1] == 0x00)                         //如果常态化第一盆被抓取
+              if(first_crawl_flag[0] == 0x00 || first_crawl_flag[1] == 0x00)                         //如果常态化第一盆被抓取
                 {
-                    lastX = lastX + 1000;                                      //预设值，调整更改，x值之间的距离
+                    lastX = lastX + pow(-1,i) * 1000;                                      //预设值，调整更改，x值之间的距离
                 }
                 else
                 {
                     Motor_Water(1);
                     delay(drip_timg);                                         //滴灌时间
                     Motor_Water(0);
-                    lastX = lastX + 1000;
+                    lastX = lastX + pow(-1,i) * 1000;
                 }
-                 if(nomal_status == 4)                                       //判断常态化滴灌是否完成，数值可能是3！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+                 if(nomal_status == 3)                                       //判断常态化滴灌是否完成，数值可能是3！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
                 {
                       lastY = 0;
                       lastX = 0;
                     Serial.printf("nomal_status = %d\n",nomal_status);
                     break;                                                   //跳出上层循环
                 }
+               Serial.printf("j = %d\n", j);
+               stepperX.runToNewPosition(First_normal[0] +  lastX );    //基于上一盆坐标x轴移动到下一盆x值
+               Serial.printf("基于上一盆坐标x轴移动到下一盆x值%d\n",(First_normal[0] + lastX));
+               Serial.printf("lastX=%d\n",lastX);
+                
             }
 
            
         }
+                            Serial.printf("条件是否满足nomal_status = %d\n",nomal_status);
+
             /*************常态化滴灌完成，进行差异化滴灌**************** */
-         if(nomal_status == 4)                                       //判断常态化滴灌是否完成
+         if(nomal_status == 3)                                       //判断常态化滴灌是否完成
             {
+               Serial.println("常态化滴灌完成，进行差异化滴灌");
                 nomal_status = 0;
+                int k = 0, g = 0;
                 for(int j = 0; j < 2; j++)
                 {
-                    stepperY.runToNewPosition(First_different[j]);
+                    k += 2;
+                    stepperY.runToNewPosition(First_different[k - 1]);
+                    
+                    Serial.printf("First_different[%d] = %d\n", (k + 1), First_different[k + 1]);
                     for(int i = 0; i <= 1; i++)                                       //常态化滴灌状态位重置
                     {  
-                        stepperX.runToNewPosition(First_different[i]);    //基于上一盆坐标x轴移动到下一盆x值
+                      g += 2;
+                        stepperX.runToNewPosition(First_different[g -2]);    //基于上一盆坐标x轴移动到下一盆x值
+                        Serial.printf("First_different[%d] = %d\n", (g - 2), First_different[g - 2]);
+
                         if(first_crawl_flag[2] == 0x01 || first_crawl_flag[3] == 0x01)
                         {
                             Motor_Water(1);
@@ -268,28 +281,35 @@ void crawl_drip_control()
             stepperY.runToNewPosition(Middle_aisle[1]);
             stepperZ.runToNewPosition(crawl_Second_hight[1]);               //进入二层
 
+            //重新赋值
+            lastY = -1000;
+            lastX = -1000;
+
            /******************常态化第二层滴灌************************* */
         for(int i = 0; i < 3; i++)                                      //遍历y轴，每次走固定坐标
         {
+          Serial.println("常态化第二层滴灌开始");
+            lastY += y_last;
             stepperY.runToNewPosition(Second_normal[1] + lastY);          //基于上一盆坐标y轴移动到下一盆y值
-            lastY += y_last;                                               //预设值，调整更改，y值之间的距离
-
+                                                           //预设值，调整更改，y值之间的距离
             different_status ++;                        
             for(int j = 0;j < 4;j++)                                    //遍历x轴，每次走固定坐标
             {
-                stepperX.runToNewPosition(Second_normal[0] + lastX );    //基于上一盆坐标x轴移动到下一盆x值
                 if(Second_crawl_flag[0] == 0x00 || Second_crawl_flag[1] == 0x00) //如果常态化第一盆被抓取
                 {
-                    lastX += x_last;                                      //预设值，调整更改，x值之间的距离
+                    lastX = lastX + pow(-1,i) * 1000;                                        //预设值，调整更改，x值之间的距离
                 }
                 else
                 {
                     Motor_Water(1);
                     delay(drip_timg);                                         //滴灌时间
                     Motor_Water(0);
-                    lastX += x_last;
+                    lastX = lastX + pow(-1,i) * 1000;  
                 }
-                 if(different_status == 4)                                       //判断常态化滴灌是否完成，数值可能是3！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+
+                stepperX.runToNewPosition(Second_normal[0] + (pow(-1,i) * lastX) );    //基于上一盆坐标x轴移动到下一盆x值
+
+                 if(different_status == 3)                                       //判断常态化滴灌是否完成，数值可能是3！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
                 {
                     lastY = 0;
                     lastX = 0;
@@ -300,15 +320,17 @@ void crawl_drip_control()
            
         }
             /*************第二层常态化滴灌完成，进行差异化滴灌**************** */
-         if(different_status == 4)                                       //判断常态化滴灌是否完成
+         if(different_status == 3)                                       //判断常态化滴灌是否完成
             {
+              int k = 0, g = 0;
                 nomal_status = 0;
                 for(int j = 0; j < 2; j++)
-                {
-                    stepperY.runToNewPosition(Second_different[j]);
+                {   k += 2;
+                    stepperY.runToNewPosition(Second_different[k - 1]);
                     for(int i = 0; i <= 1; i++)                                       //常态化滴灌状态位重置
                     {  
-                        stepperX.runToNewPosition(Second_different[i]);    //基于上一盆坐标x轴移动到下一盆x值
+                        g += 2;
+                        stepperX.runToNewPosition(Second_different[g - 2]);    //基于上一盆坐标x轴移动到下一盆x值
                         if(first_crawl_flag[2] == 0x01 || first_crawl_flag[3] == 0x01)
                         {
                             Motor_Water(1);
